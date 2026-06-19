@@ -1,6 +1,6 @@
 Param(
     [string]$website, 
-	[array]$urls = @(
+    [array]$urls = @(
 		"http://$website", 
 		"https://$website"
 	)

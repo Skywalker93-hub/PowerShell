@@ -45,19 +45,19 @@ Function WebRequest {
 	foreach ($x in $urls) {
 
     for ($a = 1; $a -le 3; $a++) {
-		iwr $x -OutFile 
-		echo "The $x is available"
-		add-content -path "/var/log/web_checks/script.log" -value "The $x is available"
-
-
+		$response2 = iwr $x
+        if ($response2.StatusCode -eq 200) {
+            echo "$x StatusCode: $($response2.StatusCode) and StatusDescription: $($response2.StatusDescription)"
+			add-content -path "/var/log/web_checks/script.log" -value "$x StatusCode: $($response2.StatusCode) and StatusDescription: $($response2.StatusDescription)"
+        }
+        else {
+            echo "$x StatusCode: $($response2.StatusCode) and StatusDescription: $($response2.StatusDescription)"
+            add-content -path "/var/log/web_checks/script.log" -value "$x StatusCode: $($response2.StatusCode) and StatusDescription: $($response2.StatusDescription)"
+            exit 1
+        }
     }
-
 }
-
-
-
-
- 
+		
 }
 
 WebRequest

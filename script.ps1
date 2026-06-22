@@ -1,49 +1,60 @@
+# List of parameters
 Param(
-    [string]$website
+    [string]$url
 )
 
 # List of variables
-
-$today = (Get-Date -Format 'dd-MM-yyyy HH:mm:ss')
+$today = (get-date -Format 'dd-MM-yyyy HH:mm:ss')
 $urls = @(
-		"http://$website", 
-		"https://$website")
+		"http://$url", 
+		"https://$url")
 $logfile = "./script.log"
 $time = @()
+$weight = @()
 
 Function Caltime {
 
     # Count the average response time for ports 80 and 443, and write the output to the log.txt file
 
-	Param(
-		[array]$time
-	)
-
 	if ( !$time ) {
-		write-output 'Parameter is empty. The average response time for ports 80 and 443 cannot be calculated'
-		add-content -path $logfile -value "${today}: Parameter is empty. The average response time for ports 80 and 443 cannot be calculated"
+		write-output 'Time parameter is empty, so the average response time cannot be calculated'
+		add-content -path $logfile -value "${today}: Time parameter is empty. The average response time for ports 80 and 443 cannot be calculated"
 		exit 1
 	}
-	$avg_time = ($time / 6)
-	write-output "${today}: The average response time for ports 80 and 443 is: $avg_time milliseconds"
-	add-content -path $logfile -value "${today}: The average response time for ports 80 and 443 is: $avg_time milliseconds"
+	$avg_time = ($time | measure-object -average).average
+	write-output "${today}: The average response time : $avg_time milliseconds"
+	add-content -path $logfile -value "${today}: The average response time : $avg_time milliseconds"
+}
 
+Function CalcWeight {
+
+	# Calculate the weight of the website answer, and write the output to the log.txt file. 
+	
+ 	if ( !$weight ) {
+		write-output 'Weight parameter is empty, so the average weight of the website answer cannot be calculated'
+		add-content -path $logfile -value "${today}: Weight parameter is empty, so the average weight of the website answer cannot be calculated."
+		exit 1
+	}
+
+	$avg_weight = ($weight | measure-object -average).average 
+	write-output "${today}: The average response weight : $avg_weight bytes"
+	add-content -path $logfile -value "${today}: Average response weight : $avg_weight bytes"
 }
 
 Function WebRequest {
 
-# Stop the script if the parameter isn't provided, and write the output to the log.txt file
+	# Stop the script if the parameter isn't provided, and write the output to the log.txt file
 
-    if ( !$website ) {
+    if ( !$url ) {
         write-output 'Not correct. Add this part after the name of the script: "... mail.ru'
         add-content -path $logfile -value "${today}: a website's URL wasn't added"
         exit 1
     }
  
- # Check the availability of website and and write the output to the log.txt file
+ 	# Check the availability of website and and write the output to the log.txt file
 	
-	Try {
-    	$response = invoke-webrequest -uri $website -TimeoutSec 10 -ErrorAction Stop
+	try {
+    	$response = invoke-webrequest -uri $url -TimeoutSec 10 -ErrorAction Stop
 		write-output "The request is True"
 		add-content -path $logfile -value "${today}: the request is True"
 			
@@ -57,16 +68,13 @@ Function WebRequest {
 		}
 	}
 
-	Catch {
+	catch {
     	write-output "The request is False"
     	add-content -path $logfile -value "${today}: the request is False"
 		exit 1
 	}
 
- # Create a stopwatch to measure the execution time of checking the ports availability  
-
-
- # Check the availability three times for ports 80 and 443, and and write the output to the log.txt file
+ 	# Check the availability three times for ports 80 and 443, and and write the output to the log.txt file
 
 	foreach ($x in $urls) {
 
@@ -74,9 +82,10 @@ Function WebRequest {
 		
 			$watch = [System.Diagnostics.Stopwatch]::StartNew()
 		
-			$response2 = invoke-webrequest -uri $x -TimeoutSec 10 -ErrorAction Stop 
+			$response2 = invoke-webrequest -uri $x -TimeoutSec 10 
 			$watch.Stop()
 			$time += $watch.Elapsed.TotalMilliseconds
+			$weight += $response2.RawContentLength
 
         	if ($response2.StatusCode -eq 200) {
             	write-output "${today}: $x StatusCode: $($response2.StatusCode) and StatusDescription: $($response2.StatusDescription)"
@@ -90,9 +99,8 @@ Function WebRequest {
     	}
     }
 
-	#Write-Host $time 
-	Caltime -time $time
-
+	Caltime  
+	CalcWeight  
 }
 
  WebRequest

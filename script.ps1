@@ -58,7 +58,6 @@ Function WebRequest {
 		exit 1
 		}
 	}
-
 	catch {
     	write-output "The website is not working"
     	add-content -path $logfile -value "${today}: the website is not working"
